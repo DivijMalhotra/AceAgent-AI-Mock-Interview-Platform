@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useClerk } from '@clerk/nextjs';
 import {
   LayoutDashboard,
   PlayCircle,
@@ -53,6 +54,7 @@ export default function DashboardSidebar({
   isMobile,
 }: SidebarProps) {
   const [active, setActive] = useState('Dashboard');
+  const { signOut } = useClerk();
 
   const bg      = dark ? '#161b27' : '#fff';
   const border  = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
@@ -62,77 +64,80 @@ export default function DashboardSidebar({
 
   function NavItem({ Icon, label, href, badge }: NavItemDef) {
     const isActive = active === label;
-    return (
-      <Link href={href} style={{ textDecoration: 'none' }}>
-        <motion.div
-          whileHover={{ x: collapsed ? 0 : 3 }}
-          onClick={() => {
-            setActive(label);
-            if (isMobile) onToggle(); // Close drawer on link click in mobile
-          }}
-          title={collapsed ? label : undefined}
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            gap:            12,
-            padding:        collapsed ? '11px 0' : '11px 14px',
-            borderRadius:   12,
-            cursor:         'pointer',
-            background:     isActive
-              ? dark ? 'rgba(22,163,74,0.15)' : 'rgba(22,163,74,0.1)'
-              : 'transparent',
-            borderLeft:     isActive
-              ? `3px solid ${accent}`
-              : '3px solid transparent',
-            marginBottom:   2,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            transition:     'all 0.2s',
-          }}
-        >
-          <Icon
-            size={18}
-            style={{ color: isActive ? accent : textNav, flexShrink: 0 }}
-          />
+    const isLogout = label === 'Logout';
 
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{   opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  color:      isActive
-                    ? dark ? '#f1f5f9' : '#0f172a'
-                    : textNav,
-                  fontSize:   13.5,
-                  fontWeight: isActive ? 700 : 500,
-                  whiteSpace: 'nowrap',
-                  overflow:   'hidden',
-                  flex:       1,
-                }}
-              >
-                {label}
-              </motion.span>
-            )}
-          </AnimatePresence>
+    const content = (
+      <motion.div
+        whileHover={{ x: collapsed ? 0 : 3 }}
+        onClick={async () => {
+          setActive(label);
+          if (isLogout) {
+            await signOut({ redirectUrl: '/' });
+          } else if (isMobile) {
+            onToggle();
+          }
+        }}
+        title={collapsed ? label : undefined}
+        style={{
+          display:        'flex',
+          alignItems:     'center',
+          gap:            12,
+          padding:        collapsed ? '11px 0' : '11px 14px',
+          borderRadius:   12,
+          cursor:         'pointer',
+          background:     isActive
+            ? dark ? 'rgba(22,163,74,0.15)' : 'rgba(22,163,74,0.1)'
+            : 'transparent',
+          borderLeft:     isActive
+            ? `3px solid ${accent}`
+            : '3px solid transparent',
+          marginBottom:   2,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          transition:     'all 0.2s',
+        }}
+        suppressHydrationWarning
+      >
+        <Icon
+          size={18}
+          style={{ color: isActive ? accent : textNav, flexShrink: 0 }}
+        />
 
-          {!collapsed && badge && (
-            <span
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{   opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
               style={{
-                background:   accent,
-                color:        '#fff',
-                fontSize:     10,
-                fontWeight:   700,
-                borderRadius: 99,
-                padding:      '2px 7px',
-                flexShrink:   0,
+                color:      isActive
+                  ? dark ? '#f1f5f9' : '#0f172a'
+                  : textNav,
+                fontSize:   13.5,
+                fontWeight: isActive ? 700 : 500,
+                whiteSpace: 'nowrap',
+                overflow:   'hidden',
+                flex:       1,
               }}
             >
-              {badge}
-            </span>
+              {label}
+            </motion.span>
           )}
-        </motion.div>
+        </AnimatePresence>
+
+        {!collapsed && badge && (
+          <span style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 99, padding: '2px 7px', flexShrink: 0 }}>
+            {badge}
+          </span>
+        )}
+      </motion.div>
+    );
+
+    if (isLogout) return content;
+
+    return (
+      <Link href={href} style={{ textDecoration: 'none' }}>
+        {content}
       </Link>
     );
   }

@@ -5,7 +5,31 @@ import { CheckCircle2, Mic } from 'lucide-react';
 import Image from 'next/image';
 import Button from '../ui/Button';
 
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+
 export default function MockInterviewSection() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  const handleStartInterview = async () => {
+    if (!isSignedIn) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const { startInterview } = await import('@/lib/api');
+      const { data } = await startInterview("General Software Engineering", "medium");
+      if (data?.session_id) {
+        window.location.href = `/interview/${data.session_id}`;
+      }
+    } catch (err) {
+      console.error("Failed to start interview:", err);
+      alert("Could not start interview. Is the backend running?");
+    }
+  };
+
   const features = [
     'Engage in full-length, role-specific technical and behavioral mock interviews.',
     'Face a diverse range of questions tailored to top-tier company interview standards.',
@@ -160,18 +184,7 @@ export default function MockInterviewSection() {
               <Button 
                 variant="glow" 
                 size="lg"
-                onClick={async () => {
-                  try {
-                    const { startInterview } = await import('@/lib/api');
-                    const { data } = await startInterview("General Software Engineering", "medium");
-                    if (data?.session_id) {
-                      window.location.href = `/interview/${data.session_id}`;
-                    }
-                  } catch (err) {
-                    console.error("Failed to start interview:", err);
-                    alert("Could not start interview. Is the backend running?");
-                  }
-                }}
+                onClick={handleStartInterview}
               >
                 Start Interview
               </Button>

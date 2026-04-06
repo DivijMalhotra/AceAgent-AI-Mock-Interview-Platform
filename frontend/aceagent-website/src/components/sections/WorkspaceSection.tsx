@@ -382,7 +382,21 @@ function MiniDashboard() {
   );
 }
 
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+
 export default function WorkspaceSection() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  const handleGoLive = () => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    } else {
+      router.push('/login');
+    }
+  };
+
   return (
     <section
       id="workspace"
@@ -596,6 +610,7 @@ export default function WorkspaceSection() {
             <Button
               variant="cyan"
               size="lg"
+              onClick={handleGoLive}
               style={{ padding: '13px 56px', fontSize: 14, letterSpacing: 3, fontWeight: 700 }}
             >
               GO LIVE

@@ -85,11 +85,18 @@ const FEATURES = [
   },
 ];
 
+import { useAuth } from '@clerk/nextjs';
+
 export default function HeroSection() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
-  const goToLogin = () => {
-    router.push('/login');
+  const handleAction = () => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    } else {
+      router.push('/login');
+    }
   };
 
   return (
@@ -285,10 +292,10 @@ export default function HeroSection() {
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Button variant="glow" size="lg" onClick={goToLogin}>
+              <Button variant="glow" size="lg" onClick={handleAction}>
                 Join Now
               </Button>
-              <Button variant="outline" size="lg" onClick={goToLogin}>
+              <Button variant="outline" size="lg" onClick={handleAction}>
                 Learn More
               </Button>
             </div>
