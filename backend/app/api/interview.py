@@ -18,7 +18,6 @@ from app.models.schemas import (
     AnswerEvaluation,
     ConfidenceBreakdown,
     ConfidenceScore,
-    Difficulty,
     InterviewAnswerResponse,
     InterviewConfig,
     InterviewStartResponse,
@@ -27,32 +26,36 @@ from app.models.schemas import (
     Question,
     SessionState,
 )
+from app.services.agents import orchestrator
+from app.services.memory import faiss_store, redis_store
 
 router = APIRouter(prefix="/interview", tags=["interview"])
-
-# In-memory session storage (Phase 3 replaces with Redis)
-_sessions: dict[str, SessionState] = {}
-
 
 @router.post("/start", response_model=APIResponse)
 async def start_interview(config: InterviewConfig) -> APIResponse:
     """
     Start a new interview session.
-    Phase 2 will wire in the AI agents for real question generation.
+    Wires in the AI agents for strategy and first question generation.
+    Stores session globally in Redis.
     """
     session = SessionState(config=config)
     logger.info("Starting session %s | topic=%s difficulty=%s", session.session_id, config.topic, config.difficulty)
 
-    # Placeholder first question (Phase 2 replaces with agent-generated)
-    first_question = Question(
-        text=f"Tell me about your experience with {config.topic}.",
-        difficulty=config.difficulty,
-        topic=config.topic,
-    )
+    # 1. Strategy Agent
+    strategy = await orchestrator.generate_strategy(config)
+    logger.debug("Generated strategy for %s: %s", session.session_id, strategy)
+
+    # 2. Question Agent
+    first_question = await orchestrator.generate_next_question(session)
 
     session.status = InterviewStatus.ACTIVE
     session.questions_asked.append(first_question.model_dump())
-    _sessions[session.session_id] = session
+    
+    # Save to Redis
+    await redis_store.save_session(session)
+    
+    # Save first question context to FAISS
+    await faiss_store.add_memory(session.session_id, first_question.text, "agent")
 
     return APIResponse(
         data=InterviewStartResponse(
@@ -63,14 +66,22 @@ async def start_interview(config: InterviewConfig) -> APIResponse:
     )
 
 
+@router.get("/{session_id}", response_model=APIResponse)
+async def get_session_state(session_id: str) -> APIResponse:
+    """Fetch current session state from Redis."""
+    session = await redis_store.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return APIResponse(data=session.model_dump())
+
+
 @router.post("/{session_id}/answer", response_model=APIResponse)
 async def submit_answer(session_id: str, answer: Answer) -> APIResponse:
     """
     Submit an answer to the current question.
-    Phase 2 will wire in real evaluation + follow-up generation.
-    Phase 4-6 will add audio/video/confidence scoring.
     """
-    session = _sessions.get(session_id)
+    # Fetch from Redis
+    session = await redis_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.status != InterviewStatus.ACTIVE:
@@ -80,41 +91,42 @@ async def submit_answer(session_id: str, answer: Answer) -> APIResponse:
 
     session.answers.append(answer.model_dump())
 
-    # Placeholder evaluation (Phase 2 replaces)
-    evaluation = AnswerEvaluation(
-        question_id=answer.question_id,
-        score=7.0,
-        strengths=["Good structure"],
-        weaknesses=["Could add more detail"],
-        missing_concepts=[],
-        depth_rating="adequate",
-        suggestion="Try to include concrete examples.",
-    )
+    current_q_index = session.current_question_index
+    question_data = session.questions_asked[current_q_index]
+    question_obj = Question(**question_data)
 
-    # Placeholder confidence (Phase 6 replaces)
-    confidence = ConfidenceScore(
-        overall=0.7,
-        breakdown=ConfidenceBreakdown(
-            eye_contact=0.8,
-            speech_clarity=0.7,
-            speech_pace=0.6,
-            facial_expression=0.7,
-            filler_word_ratio=0.8,
-        ),
-        feedback="Maintain eye contact and reduce filler words.",
-    )
+    # Save user answer to FAISS memory
+    await faiss_store.add_memory(session_id, answer.transcript, "user")
 
+    # 1. Evaluator Agent
+    evaluation = await orchestrator.evaluate_answer(question_obj, answer.transcript)
+
+    from app.services.scoring import confidence_engine
+    confidence = confidence_engine.evaluate(answer.audio_metrics, answer.video_metrics)
     session.confidence_scores.append(confidence.model_dump())
 
-    # Generate next question (placeholder — Phase 2 replaces)
-    next_q = Question(
-        text=f"Can you elaborate on {session.config.topic} further?",
-        difficulty=session.config.difficulty,
-        topic=session.config.topic,
-        follow_up=True,
+    from app.services.adaptive import adaptive_engine
+    next_q = await adaptive_engine.determine_next_step(
+        session=session,
+        current_q=question_obj,
+        transcript=answer.transcript,
+        evaluation=evaluation,
+        confidence=confidence
     )
+
     session.questions_asked.append(next_q.model_dump())
     session.current_question_index += 1
+
+    # Store evaluation internally for the roadmap
+    if not hasattr(session, "evaluations"):
+        session.evaluations = []
+    session.evaluations.append(evaluation)
+
+    # Save next question to FAISS memory
+    await faiss_store.add_memory(session_id, next_q.text, "agent")
+
+    # Save updated state to Redis
+    await redis_store.save_session(session)
 
     return APIResponse(
         data=InterviewAnswerResponse(
@@ -129,7 +141,7 @@ async def submit_answer(session_id: str, answer: Answer) -> APIResponse:
 @router.get("/{session_id}/summary", response_model=APIResponse)
 async def get_summary(session_id: str) -> APIResponse:
     """Return the full interview summary."""
-    session = _sessions.get(session_id)
+    session = await redis_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -137,15 +149,20 @@ async def get_summary(session_id: str) -> APIResponse:
     if session.confidence_scores:
         avg_confidence = sum(c["overall"] for c in session.confidence_scores) / len(session.confidence_scores)
 
+    evals = getattr(session, "evaluations", [])
+    average_score = sum(e.score for e in evals) / len(evals) if evals else 0.0
+
+    roadmap = await orchestrator.generate_roadmap(session, evals)
+
     summary = InterviewSummary(
         session_id=session_id,
         topic=session.config.topic,
         total_questions=len(session.questions_asked),
-        average_score=7.0,  # placeholder
+        average_score=round(average_score, 1),
         average_confidence=round(avg_confidence, 2),
-        strengths=["Good communication"],
-        weaknesses=["Needs more depth"],
-        roadmap=["Practice system design", "Study advanced concepts"],
+        strengths=list(set(s for e in evals for s in e.strengths))[:5],
+        weaknesses=list(set(w for e in evals for w in e.weaknesses))[:5],
+        roadmap=roadmap,
     )
 
     return APIResponse(data=summary.model_dump())
@@ -154,11 +171,12 @@ async def get_summary(session_id: str) -> APIResponse:
 @router.post("/{session_id}/end", response_model=APIResponse)
 async def end_interview(session_id: str) -> APIResponse:
     """End an active session."""
-    session = _sessions.get(session_id)
+    session = await redis_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     session.status = InterviewStatus.COMPLETED
+    await redis_store.save_session(session)
     logger.info("Session %s ended | questions=%d", session_id, len(session.questions_asked))
 
     return APIResponse(data={"session_id": session_id, "status": "completed"})

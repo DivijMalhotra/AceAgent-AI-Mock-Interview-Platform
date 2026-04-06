@@ -1,1 +1,3 @@
-# Video Processing (OpenCV + MediaPipe) — implemented in Phase 5
+from app.services.video.processor import VideoProcessor, video_processor
+
+__all__ = ["VideoProcessor", "video_processor"]

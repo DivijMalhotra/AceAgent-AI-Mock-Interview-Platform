@@ -19,6 +19,7 @@ from app.core.logging import logger
 # ── API Routers ──
 from app.api.health import router as health_router
 from app.api.interview import router as interview_router
+from app.api.ws import router as ws_router
 
 
 @asynccontextmanager
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     # ── Mount routers ──
     app.include_router(health_router, prefix="/api")
     app.include_router(interview_router, prefix="/api")
+    app.include_router(ws_router)
 
     # ── Root redirect ──
     @app.get("/", include_in_schema=False)

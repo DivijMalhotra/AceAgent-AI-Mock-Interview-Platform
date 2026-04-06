@@ -1,1 +1,3 @@
-# Confidence Scoring Engine — implemented in Phase 6
+from app.services.scoring.engine import ConfidenceEngine, confidence_engine
+
+__all__ = ["ConfidenceEngine", "confidence_engine"]

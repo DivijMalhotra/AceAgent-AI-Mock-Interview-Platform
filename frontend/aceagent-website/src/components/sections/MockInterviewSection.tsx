@@ -157,7 +157,22 @@ export default function MockInterviewSection() {
             </div>
 
             <div style={{ marginTop: 8 }}>
-              <Button variant="glow" size="lg">
+              <Button 
+                variant="glow" 
+                size="lg"
+                onClick={async () => {
+                  try {
+                    const { startInterview } = await import('@/lib/api');
+                    const { data } = await startInterview("General Software Engineering", "medium");
+                    if (data?.session_id) {
+                      window.location.href = `/interview/${data.session_id}`;
+                    }
+                  } catch (err) {
+                    console.error("Failed to start interview:", err);
+                    alert("Could not start interview. Is the backend running?");
+                  }
+                }}
+              >
                 Start Interview
               </Button>
             </div>

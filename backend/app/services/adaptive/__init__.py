@@ -1,1 +1,3 @@
-# Adaptive Questioning Engine — implemented in Phase 7
+from app.services.adaptive.engine import AdaptiveEngine, adaptive_engine
+
+__all__ = ["AdaptiveEngine", "adaptive_engine"]
