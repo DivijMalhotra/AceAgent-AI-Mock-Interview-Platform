@@ -34,6 +34,7 @@ class BaseAgent:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
+                max_tokens=800,
             )
             content = response.choices[0].message.content or ""
             return content.strip()
@@ -48,7 +49,8 @@ class BaseAgent:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
+                max_tokens=1500,
             )
             content = response.choices[0].message.content or "{}"
             return orjson.loads(content)

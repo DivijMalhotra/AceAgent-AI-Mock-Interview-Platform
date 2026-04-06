@@ -20,6 +20,8 @@ async def main():
         print("OPENAI RESP:", res)
     except Exception as e:
         print("OPENAI ERROR!")
+        with open("error.txt", "w") as f:
+            f.write(str(e))
         traceback.print_exc()
 
 if __name__ == "__main__":
