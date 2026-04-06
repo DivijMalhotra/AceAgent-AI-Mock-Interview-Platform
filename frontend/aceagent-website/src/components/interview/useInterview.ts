@@ -125,8 +125,8 @@ export function useInterview(sessionId: string) {
         setCurrentQuestion(response.data.next_question);
         setSystemMessage("Excellent. Next question ready.");
       } else {
-        setSystemMessage("Interview Complete. Redirecting to summary...");
-        window.location.href = `/interview/${sessionId}/summary`;
+        setSystemMessage("Interview Complete. Redirecting to analysis...");
+        window.location.href = `/dashboard/analysis/${sessionId}`;
       }
     } catch (err) {
       console.error("Submission failed:", err);

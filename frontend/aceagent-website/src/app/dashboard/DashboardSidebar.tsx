@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  FileBarChart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ const MENU: NavItemDef[] = [
   { Icon: PlayCircle,      label: 'Practice Sessions',   href: '/dashboard/practice-sessions', badge: '12+' },
   { Icon: Calendar,        label: 'Calendar',            href: '/dashboard/calendar',           badge: null  },
   { Icon: BarChart2,       label: 'Performance Insights', href: '/dashboard/performance',       badge: null  },
+  { Icon: FileBarChart,    label: 'Session Analysis',    href: '/dashboard/analysis',           badge: 'New' },
   { Icon: BookOpen,        label: 'Interview Library',   href: '/dashboard/library',            badge: null  },
 ];
 

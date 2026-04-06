@@ -66,3 +66,9 @@ export async function checkBackendHealth() {
     return { success: false, error: "Backend unreachable" };
   }
 }
+
+export async function getInterviewAnalysis(sessionId: string) {
+  const response = await fetch(`${API_URL}/interview/${sessionId}/analysis`);
+  return handleResponse(response, "Failed to fetch analysis");
+}
+
