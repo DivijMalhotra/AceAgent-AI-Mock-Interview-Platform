@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth, UserButton } from '@clerk/nextjs';
 
 const links = [
   { label: 'Home',       href: '#hero'      },
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -120,36 +122,54 @@ export default function Navbar() {
             style={{ display: 'flex', alignItems: 'center', gap: 12 }}
             className="hidden md:flex"
           >
-            <button
-              onClick={goToLogin}
-              style={{
-                color: '#94a3b8',
-                fontSize: 13,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Login
-            </button>
+            {!isSignedIn ? (
+              <>
+                <button
+                  onClick={goToLogin}
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 13,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Login
+                </button>
 
-            <button
-              onClick={goToLogin}
-              style={{
-                background: 'linear-gradient(135deg,#ec4899,#7c3aed)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 99,
-                padding: '8px 20px',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Sign Up
-            </button>
+                <button
+                  onClick={goToLogin}
+                  style={{
+                    background: 'linear-gradient(135deg,#ec4899,#7c3aed)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 99,
+                    padding: '8px 20px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: { width: 34, height: 34 },
+                    userButtonPopoverCard: {
+                      background: 'rgba(10,14,32,0.95)',
+                      border: '1px solid rgba(124,58,237,0.22)',
+                      backdropFilter: 'blur(16px)',
+                    },
+                    userButtonPopoverActionButton: { color: '#cbd5e1' },
+                  },
+                }}
+              />
+            )}
           </div>
 
           {/* Mobile toggle */}
