@@ -11,13 +11,13 @@ interface Props {
 }
 
 export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggleSidebar }: Props) {
-  const bg      = dark ? '#161b27' : '#fff';
-  const border  = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg      = dark ? '#0c1032' : '#fff';
+  const border  = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text    = dark ? '#f1f5f9' : '#0f172a';
   const sub     = dark ? '#64748b' : '#9ca3af';
-  const inputBg = dark ? 'rgba(255,255,255,0.05)' : '#f3f4f6';
+  const inputBg = dark ? 'rgba(124,58,237,0.06)' : '#f3f4f6';
   const inputBorder = dark
-    ? '1px solid rgba(255,255,255,0.07)'
+    ? '1px solid rgba(124,58,237,0.12)'
     : '1px solid rgba(0,0,0,0.08)';
 
   return (
@@ -93,7 +93,7 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
               position:     'absolute',
               right:        10,
               background:   dark
-                ? 'rgba(255,255,255,0.08)'
+                ? 'rgba(139,92,246,0.12)'
                 : 'rgba(0,0,0,0.06)',
               borderRadius: 6,
               padding:      '2px 7px',
@@ -187,7 +187,7 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
               width:        7,
               height:       7,
               borderRadius: '50%',
-              background:   '#16a34a',
+              background:   '#8b5cf6',
               border:       `1.5px solid ${bg}`,
             }}
           />
@@ -201,7 +201,7 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
             width:         isMobile ? 30 : 38,
             height:        isMobile ? 30 : 38,
             borderRadius:  '50%',
-            background:    'linear-gradient(135deg,#16a34a,#2563eb)',
+            background:    'linear-gradient(135deg,#8b5cf6,#6366f1)',
             display:       'flex',
             alignItems:    'center',
             justifyContent:'center',

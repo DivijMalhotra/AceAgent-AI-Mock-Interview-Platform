@@ -10,7 +10,7 @@ const METRICS = [
     name:   'Communication',
     detail: 'Clear and concise, but watch for fillers.',
     status: 'Excellent',
-    color:  '#16a34a',
+    color:  '#8b5cf6',
     pct:    92,
     avatar: '🎯',
   },
@@ -18,7 +18,7 @@ const METRICS = [
     name:   'Technical Depth',
     detail: 'Strong understanding of OOP concepts.',
     status: 'Improving',
-    color:  '#2563eb',
+    color:  '#6366f1',
     pct:    74,
     avatar: '⚙️',
   },
@@ -34,29 +34,29 @@ const METRICS = [
     name:   'Problem Solving',
     detail: 'Excellent approach to edge cases.',
     status: 'Excellent',
-    color:  '#8b5cf6',
+    color:  '#22d3ee',
     pct:    88,
     avatar: '💡',
   },
 ];
 
 const STATUS_COLOR: Record<string, string> = {
-  Excellent: '#16a34a',
-  Improving: '#2563eb',
+  Excellent: '#8b5cf6',
+  Improving: '#6366f1',
   Neutral:   '#f59e0b',
 };
 const STATUS_BG: Record<string, string> = {
-  Excellent: 'rgba(22,163,74,0.12)',
-  Improving: 'rgba(37,99,235,0.12)',
+  Excellent: 'rgba(139,92,246,0.12)',
+  Improving: 'rgba(99,102,241,0.12)',
   Neutral:   'rgba(245,158,11,0.12)',
 };
 
 export default function AIFeedbackPanel({ dark }: Props) {
-  const bg     = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg     = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text   = dark ? '#f1f5f9' : '#0f172a';
   const sub    = dark ? '#64748b' : '#9ca3af';
-  const rowDiv = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
+  const rowDiv = dark ? 'rgba(139,92,246,0.06)' : 'rgba(0,0,0,0.05)';
 
   return (
     <motion.div
@@ -99,11 +99,11 @@ export default function AIFeedbackPanel({ dark }: Props) {
             display:      'flex',
             alignItems:   'center',
             gap:          5,
-            background:   'rgba(22,163,74,0.12)',
-            border:       '1px solid rgba(22,163,74,0.25)',
+            background:   'rgba(139,92,246,0.12)',
+            border:       '1px solid rgba(139,92,246,0.25)',
             borderRadius: 99,
             padding:      '5px 14px',
-            color:        '#16a34a',
+            color:        '#8b5cf6',
             fontSize:     12,
             fontWeight:   700,
             cursor:       'pointer',

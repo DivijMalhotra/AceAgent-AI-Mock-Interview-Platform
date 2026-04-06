@@ -6,16 +6,16 @@ import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 interface Props { dark: boolean; }
 
 const ITEMS = [
-  { title: 'Data Structures Round',  score: 82, color: '#16a34a', trend: 'up'   },
+  { title: 'Data Structures Round',  score: 82, color: '#8b5cf6', trend: 'up'   },
   { title: 'Behavioral Leadership',  score: 74, color: '#f59e0b', trend: 'down' },
-  { title: 'Python Deep Dive',       score: 91, color: '#2563eb', trend: 'up'   },
+  { title: 'Python Deep Dive',       score: 91, color: '#6366f1', trend: 'up'   },
   { title: 'System Design Basics',   score: 68, color: '#ec4899', trend: 'up'   },
-  { title: 'HR Communication Round', score: 79, color: '#8b5cf6', trend: 'up'   },
+  { title: 'HR Communication Round', score: 79, color: '#22d3ee', trend: 'up'   },
 ];
 
 export default function RecentAnalysis({ dark }: Props) {
-  const bg     = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg     = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text   = dark ? '#f1f5f9' : '#0f172a';
   const sub    = dark ? '#64748b' : '#9ca3af';
 
@@ -58,7 +58,7 @@ export default function RecentAnalysis({ dark }: Props) {
             alignItems:   'center',
             gap:          4,
             background:   dark
-              ? 'rgba(255,255,255,0.06)'
+              ? 'rgba(139,92,246,0.08)'
               : 'rgba(0,0,0,0.05)',
             border:       `1px solid ${border}`,
             borderRadius: 99,
@@ -94,7 +94,7 @@ export default function RecentAnalysis({ dark }: Props) {
           }}
           whileHover={{
             background: dark
-              ? 'rgba(255,255,255,0.03)'
+              ? 'rgba(139,92,246,0.04)'
               : 'rgba(0,0,0,0.02)',
           }}
         >
@@ -141,7 +141,7 @@ export default function RecentAnalysis({ dark }: Props) {
               style={{
                 height:       4,
                 background:   dark
-                  ? 'rgba(255,255,255,0.06)'
+                  ? 'rgba(139,92,246,0.08)'
                   : 'rgba(0,0,0,0.06)',
                 borderRadius: 99,
                 overflow:     'hidden',
@@ -183,7 +183,7 @@ export default function RecentAnalysis({ dark }: Props) {
               {item.score}/100
             </div>
             {item.trend === 'up'
-              ? <TrendingUp   size={11} style={{ color: '#16a34a', marginTop: 2 }} />
+              ? <TrendingUp   size={11} style={{ color: '#8b5cf6', marginTop: 2 }} />
               : <TrendingDown size={11} style={{ color: '#ef4444', marginTop: 2 }} />
             }
           </div>

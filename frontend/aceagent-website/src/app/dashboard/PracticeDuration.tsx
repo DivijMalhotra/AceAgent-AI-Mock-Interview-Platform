@@ -29,8 +29,8 @@ export default function PracticeDuration({ dark }: Props) {
       style={{
         borderRadius:  18,
         padding:       '22px',
-        background:    'linear-gradient(145deg,#14532d,#166534)',
-        boxShadow:     '0 8px 32px rgba(22,163,74,0.35)',
+        background:    'linear-gradient(145deg,#4c1d95,#6d28d9)',
+        boxShadow:     '0 8px 32px rgba(139,92,246,0.35)',
         display:       'flex',
         flexDirection: 'column',
         position:      'relative',

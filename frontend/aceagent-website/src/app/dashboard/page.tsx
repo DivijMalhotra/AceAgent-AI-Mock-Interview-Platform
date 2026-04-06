@@ -57,7 +57,7 @@ export default function DashboardPage() {
         display: 'flex',
         minHeight: '100vh',
         width: '100vw',
-        background: darkMode ? '#0d1117' : '#f0f4f0',
+        background: darkMode ? '#050816' : '#f0f4f0',
         fontFamily: "'Space Grotesk', sans-serif",
         transition: 'background 0.3s',
       }}
@@ -88,7 +88,7 @@ export default function DashboardPage() {
           style={{
             flex: 1,
             padding: isMobile ? '20px 16px' : '28px 28px 40px',
-            background: darkMode ? '#0d1117' : '#f0f4f0',
+            background: darkMode ? '#050816' : '#f0f4f0',
             transition: 'background 0.3s',
           }}
         >

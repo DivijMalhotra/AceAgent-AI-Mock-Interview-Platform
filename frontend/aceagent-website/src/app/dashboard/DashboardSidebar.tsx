@@ -56,11 +56,11 @@ export default function DashboardSidebar({
   const [active, setActive] = useState('Dashboard');
   const { signOut } = useClerk();
 
-  const bg      = dark ? '#161b27' : '#fff';
-  const border  = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg      = dark ? '#0c1032' : '#fff';
+  const border  = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const textSub = dark ? '#475569' : '#9ca3af';
   const textNav = dark ? '#94a3b8' : '#6b7280';
-  const accent  = '#16a34a';
+  const accent  = '#8b5cf6';
 
   function NavItem({ Icon, label, href, badge }: NavItemDef) {
     const isActive = active === label;
@@ -86,7 +86,7 @@ export default function DashboardSidebar({
           borderRadius:   12,
           cursor:         'pointer',
           background:     isActive
-            ? dark ? 'rgba(22,163,74,0.15)' : 'rgba(22,163,74,0.1)'
+            ? dark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)'
             : 'transparent',
           borderLeft:     isActive
             ? `3px solid ${accent}`
@@ -201,12 +201,12 @@ export default function DashboardSidebar({
               width:         32,
               height:        32,
               borderRadius:  10,
-              background:    'linear-gradient(135deg,#16a34a,#15803d)',
+              background:    'linear-gradient(135deg,#8b5cf6,#7c3aed)',
               display:       'flex',
               alignItems:    'center',
               justifyContent:'center',
               flexShrink:    0,
-              boxShadow:     '0 4px 12px rgba(22,163,74,0.4)',
+              boxShadow:     '0 4px 12px rgba(139,92,246,0.4)',
             }}
           >
             <Zap size={16} style={{ color: '#fff' }} />
@@ -305,8 +305,8 @@ export default function DashboardSidebar({
                 margin:       '0 12px 16px',
                 borderRadius: 16,
                 padding:      '16px 14px',
-                background:   'linear-gradient(135deg,#14532d,#16a34a)',
-                boxShadow:    '0 4px 20px rgba(22,163,74,0.3)',
+                background:   'linear-gradient(135deg,#4c1d95,#7c3aed)',
+                boxShadow:    '0 4px 20px rgba(139,92,246,0.3)',
                 flexShrink:   0,
               }}
             >
@@ -335,7 +335,7 @@ export default function DashboardSidebar({
                   width:        '100%',
                   padding:      '8px 0',
                   background:   '#fff',
-                  color:        '#16a34a',
+                  color:        '#7c3aed',
                   border:       'none',
                   borderRadius: 99,
                   fontSize:     12,
@@ -364,7 +364,7 @@ export default function DashboardSidebar({
               width:          28,
               height:         28,
               borderRadius:   '50%',
-              background:     dark ? '#1e293b' : '#fff',
+              background:     dark ? '#151a3d' : '#fff',
               border:         `1.5px solid ${border}`,
               display:        'flex',
               alignItems:     'center',

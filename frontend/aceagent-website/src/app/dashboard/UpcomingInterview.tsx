@@ -10,15 +10,14 @@ export default function UpcomingInterview({ dark }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   
-  const bg     = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg     = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text   = dark ? '#f1f5f9' : '#0f172a';
   const sub    = dark ? '#64748b' : '#9ca3af';
 
   const handleJoin = async () => {
     setLoading(true);
     try {
-      // Starting a mock session for the upcoming interview
       const response = await startInterview('System Design', 'hard');
       if (response.data?.session_id) {
         router.push(`/interview/${response.data.session_id}`);
@@ -62,9 +61,9 @@ export default function UpcomingInterview({ dark }: Props) {
       <div
         style={{
           background:   dark
-            ? 'rgba(22,163,74,0.08)'
-            : 'rgba(22,163,74,0.06)',
-          border:       '1px solid rgba(22,163,74,0.2)',
+            ? 'rgba(139,92,246,0.08)'
+            : 'rgba(139,92,246,0.06)',
+          border:       '1px solid rgba(139,92,246,0.2)',
           borderRadius: 14,
           padding:      16,
           marginBottom: 18,
@@ -75,12 +74,12 @@ export default function UpcomingInterview({ dark }: Props) {
             width:         36,
             height:        36,
             borderRadius:  '50%',
-            background:    'linear-gradient(135deg,#16a34a,#15803d)',
+            background:    'linear-gradient(135deg,#8b5cf6,#7c3aed)',
             display:       'flex',
             alignItems:    'center',
             justifyContent:'center',
             marginBottom:  12,
-            boxShadow:     '0 4px 12px rgba(22,163,74,0.35)',
+            boxShadow:     '0 4px 12px rgba(139,92,246,0.35)',
           }}
         >
           <Video size={16} style={{ color: '#fff' }} />
@@ -123,7 +122,7 @@ export default function UpcomingInterview({ dark }: Props) {
           padding:        '13px 0',
           borderRadius:   12,
           border:         'none',
-          background:     'linear-gradient(135deg,#16a34a,#15803d)',
+          background:     'linear-gradient(135deg,#8b5cf6,#7c3aed)',
           color:          '#fff',
           fontSize:       14,
           fontWeight:     700,
@@ -133,7 +132,7 @@ export default function UpcomingInterview({ dark }: Props) {
           alignItems:     'center',
           justifyContent: 'center',
           gap:            8,
-          boxShadow:      '0 4px 16px rgba(22,163,74,0.4)',
+          boxShadow:      '0 4px 16px rgba(139,92,246,0.4)',
           opacity:        loading ? 0.8 : 1,
         }}
       >
@@ -148,4 +147,4 @@ export default function UpcomingInterview({ dark }: Props) {
       </motion.button>
     </motion.div>
   );
-}
+}

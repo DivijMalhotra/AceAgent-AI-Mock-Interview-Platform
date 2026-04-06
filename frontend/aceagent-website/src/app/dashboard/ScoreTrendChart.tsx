@@ -37,7 +37,7 @@ function CustomTooltip({
   return (
     <div
       style={{
-        background:   'rgba(22,163,74,0.95)',
+        background:   'rgba(139,92,246,0.95)',
         borderRadius: 10,
         padding:      '8px 14px',
         boxShadow:    '0 4px 20px rgba(0,0,0,0.3)',
@@ -51,11 +51,11 @@ function CustomTooltip({
 }
 
 export default function ScoreTrendChart({ dark }: Props) {
-  const bg     = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg     = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text   = dark ? '#f1f5f9' : '#0f172a';
   const sub    = dark ? '#64748b' : '#9ca3af';
-  const grid   = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const grid   = dark ? 'rgba(139,92,246,0.06)' : 'rgba(0,0,0,0.05)';
 
   return (
     <motion.div
@@ -92,14 +92,14 @@ export default function ScoreTrendChart({ dark }: Props) {
         <div
           style={{
             background:   dark
-              ? 'rgba(22,163,74,0.15)'
-              : 'rgba(22,163,74,0.1)',
-            color:        '#16a34a',
+              ? 'rgba(139,92,246,0.15)'
+              : 'rgba(139,92,246,0.1)',
+            color:        '#8b5cf6',
             fontSize:     11,
             fontWeight:   700,
             padding:      '4px 12px',
             borderRadius: 99,
-            border:       '1px solid rgba(22,163,74,0.3)',
+            border:       '1px solid rgba(139,92,246,0.3)',
           }}
         >
           This Week
@@ -127,7 +127,7 @@ export default function ScoreTrendChart({ dark }: Props) {
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ fill: 'rgba(22,163,74,0.06)' }}
+            cursor={{ fill: 'rgba(139,92,246,0.06)' }}
           />
           <Bar dataKey="score" radius={[8, 8, 0, 0]}>
             {data.map((entry, i) => (
@@ -135,10 +135,10 @@ export default function ScoreTrendChart({ dark }: Props) {
                 key={i}
                 fill={
                   entry.highlight
-                    ? '#16a34a'
+                    ? '#8b5cf6'
                     : dark
-                      ? 'rgba(22,163,74,0.25)'
-                      : 'rgba(22,163,74,0.15)'
+                      ? 'rgba(139,92,246,0.25)'
+                      : 'rgba(139,92,246,0.15)'
                 }
               />
             ))}

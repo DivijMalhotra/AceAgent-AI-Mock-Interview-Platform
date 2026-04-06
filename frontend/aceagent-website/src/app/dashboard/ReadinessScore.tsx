@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 interface Props { dark: boolean; }
 
 const LEGEND = [
-  { label: 'Concept Mastery', color: '#16a34a', pct: 72 },
-  { label: 'Coding Speed',    color: '#2563eb', pct: 58 },
-  { label: 'Soft Skills',     color: '#f59e0b', pct: 81 },
+  { label: 'Concept Mastery', color: '#8b5cf6', pct: 72 },
+  { label: 'Coding Speed',    color: '#6366f1', pct: 58 },
+  { label: 'Soft Skills',     color: '#22d3ee', pct: 81 },
 ];
 
 export default function ReadinessScore({ dark }: Props) {
-  const bg     = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const bg     = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text   = dark ? '#f1f5f9' : '#0f172a';
   const sub    = dark ? '#64748b' : '#9ca3af';
-  const trackBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const trackBg = dark ? 'rgba(139,92,246,0.08)' : 'rgba(0,0,0,0.06)';
 
   const pct   = 68;
   const r     = 54;
@@ -57,8 +57,8 @@ export default function ReadinessScore({ dark }: Props) {
         <svg width={140} height={140} viewBox="0 0 140 140">
           <defs>
             <linearGradient id="readGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop stopColor="#16a34a" />
-              <stop offset="1" stopColor="#2563eb" />
+              <stop stopColor="#8b5cf6" />
+              <stop offset="1" stopColor="#22d3ee" />
             </linearGradient>
           </defs>
           <circle

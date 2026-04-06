@@ -37,8 +37,8 @@ const STATS = [
 ];
 
 export default function StatsRow({ dark }: Props) {
-  const cardBg = dark ? '#161b27' : '#fff';
-  const border = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const cardBg = dark ? '#0c1032' : '#fff';
+  const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const sub    = dark ? '#64748b' : '#9ca3af';
   const text   = dark ? '#f1f5f9' : '#0f172a';
 
@@ -60,11 +60,11 @@ export default function StatsRow({ dark }: Props) {
             borderRadius: 18,
             padding:      '20px 22px',
             background:   s.featured
-              ? 'linear-gradient(145deg,#16a34a,#15803d)'
+              ? 'linear-gradient(145deg,#7c3aed,#6d28d9)'
               : cardBg,
             border:      s.featured ? 'none' : `1px solid ${border}`,
             boxShadow:   s.featured
-              ? '0 8px 32px rgba(22,163,74,0.35)'
+              ? '0 8px 32px rgba(139,92,246,0.35)'
               : dark
                 ? '0 2px 12px rgba(0,0,0,0.2)'
                 : '0 2px 12px rgba(0,0,0,0.06)',
@@ -85,7 +85,7 @@ export default function StatsRow({ dark }: Props) {
               background:     s.featured
                 ? 'rgba(255,255,255,0.2)'
                 : dark
-                  ? 'rgba(255,255,255,0.05)'
+                  ? 'rgba(139,92,246,0.08)'
                   : 'rgba(0,0,0,0.05)',
               display:        'flex',
               alignItems:     'center',
@@ -132,7 +132,7 @@ export default function StatsRow({ dark }: Props) {
               background:   s.featured
                 ? 'rgba(255,255,255,0.15)'
                 : dark
-                  ? 'rgba(255,255,255,0.04)'
+                  ? 'rgba(139,92,246,0.08)'
                   : 'rgba(0,0,0,0.04)',
               borderRadius: 99,
               padding:      '4px 10px',
@@ -141,11 +141,11 @@ export default function StatsRow({ dark }: Props) {
           >
             <TrendingUp
               size={10}
-              style={{ color: s.featured ? '#fff' : '#16a34a' }}
+              style={{ color: s.featured ? '#fff' : '#8b5cf6' }}
             />
             <span
               style={{
-                color:      s.featured ? '#fff' : '#16a34a',
+                color:      s.featured ? '#fff' : '#8b5cf6',
                 fontSize:   10,
                 fontWeight: 600,
               }}
