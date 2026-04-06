@@ -75,6 +75,7 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
           />
           <input
             placeholder="Search interview types, roles, or feedback..."
+            suppressHydrationWarning  
             style={{
               width:        '100%',
               padding:      '9px 48px 9px 36px',

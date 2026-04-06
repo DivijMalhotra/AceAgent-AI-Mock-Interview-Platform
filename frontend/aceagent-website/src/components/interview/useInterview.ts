@@ -35,7 +35,8 @@ export function useInterview(sessionId: string) {
     if (!sessionId) return;
     
     setStatus("connecting");
-    const ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
+    const WS_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace("http", "ws");
+    const ws = new WebSocket(`${WS_URL}/ws/${sessionId}`);
     
     ws.onopen = () => setStatus("active");
     

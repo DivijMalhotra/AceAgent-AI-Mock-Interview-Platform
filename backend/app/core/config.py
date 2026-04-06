@@ -1,10 +1,3 @@
-"""
-ACIE Backend — Centralized Configuration
-
-Loads all settings from environment variables via pydantic-settings.
-Every module imports `settings` from here instead of reading env directly.
-"""
-
 from __future__ import annotations
 
 import json
@@ -21,8 +14,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # ── Database ──
+    database_url: str = "postgresql+asyncpg://postgres:postgre%402005@localhost:5432/ai_mock_interview"
+
     # ── OpenAI ──
-    openai_api_key: str = ""
+    openai_api_key: str = "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"
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
 
@@ -47,7 +43,6 @@ class Settings(BaseSettings):
     # ── Derived helpers ──
     @property
     def cors_origin_list(self) -> List[str]:
-        """Parse the JSON-encoded CORS_ORIGINS string into a list."""
         try:
             return json.loads(self.cors_origins)
         except (json.JSONDecodeError, TypeError):
