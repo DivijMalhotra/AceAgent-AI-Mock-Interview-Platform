@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInterview } from "./useInterview";
 import { 
@@ -30,6 +30,72 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
   } = useInterview(sessionId);
   
   const [userAnswer, setUserAnswer] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const finalTranscriptRef = useRef("");
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        
+        recognition.onresult = (event: any) => {
+          let interim = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscriptRef.current += transcript + " ";
+            } else {
+              interim += transcript;
+            }
+          }
+          setUserAnswer(finalTranscriptRef.current + interim);
+        };
+
+        recognition.onerror = (e: any) => console.error("Speech Recognition Error", e);
+        recognition.onend = () => setIsListening(false);
+        recognitionRef.current = recognition;
+      }
+    }
+    
+    // Cleanup TTS
+    return () => {
+      if (typeof window !== "undefined") {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Text-To-Speech for questions
+  useEffect(() => {
+    if (currentQuestion?.text && typeof window !== "undefined") {
+      window.speechSynthesis.cancel(); // Stop any previous speech
+      const utterance = new SpeechSynthesisUtterance(currentQuestion.text);
+      // Optional: Give it a better voice if available, but default is fine
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [currentQuestion]);
+
+  const toggleMic = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      // Append a space if there's already text
+      const baseText = userAnswer.trim();
+      finalTranscriptRef.current = baseText ? baseText + " " : "";
+      setUserAnswer(finalTranscriptRef.current);
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error("Could not start speech recognition", e);
+      }
+    }
+  };
 
   if (status === "connecting") {
     return (
@@ -92,8 +158,15 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
             >
               <Camera className="text-white group-hover:scale-110 transition-transform" size={20} />
             </button>
-            <button className="p-3.5 bg-black/60 hover:bg-violet-600/20 backdrop-blur-2xl border border-white/10 hover:border-violet-500/40 rounded-xl transition-all group">
-              <Mic className="text-white group-hover:scale-110 transition-transform" size={20} />
+            <button 
+              onClick={toggleMic}
+              className={`p-3.5 backdrop-blur-2xl border rounded-xl transition-all group ${
+                isListening 
+                  ? "bg-red-500/20 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)] animate-pulse" 
+                  : "bg-black/60 hover:bg-violet-600/20 border-white/10 hover:border-violet-500/40"
+              }`}
+            >
+              <Mic className={`${isListening ? "text-red-400" : "text-white"} group-hover:scale-110 transition-transform`} size={20} />
             </button>
             <button className="px-6 py-3 bg-red-500/80 hover:bg-red-500 backdrop-blur-2xl border border-red-400/30 rounded-xl transition-all text-white text-xs font-bold tracking-wide">
               End Session

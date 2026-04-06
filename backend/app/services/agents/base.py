@@ -12,7 +12,10 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import AgentRole
 
-client = AsyncOpenAI(api_key=settings.openai_api_key)
+client = AsyncOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=settings.openai_api_key,
+)
 
 
 class BaseAgent:
