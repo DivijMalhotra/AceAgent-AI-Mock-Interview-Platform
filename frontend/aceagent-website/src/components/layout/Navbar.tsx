@@ -23,8 +23,8 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  const goToDashboard = () => {
-    router.push('/dashboard');
+  const goToLogin = () => {
+    router.push('/login');
   };
 
   return (
@@ -121,7 +121,7 @@ export default function Navbar() {
             className="hidden md:flex"
           >
             <button
-              onClick={goToDashboard}
+              onClick={goToLogin}
               style={{
                 color: '#94a3b8',
                 fontSize: 13,
@@ -131,11 +131,11 @@ export default function Navbar() {
                 fontFamily: 'inherit',
               }}
             >
-              Learn more
+              Login
             </button>
 
             <button
-              onClick={goToDashboard}
+              onClick={goToLogin}
               style={{
                 background: 'linear-gradient(135deg,#ec4899,#7c3aed)',
                 color: '#fff',
@@ -148,7 +148,7 @@ export default function Navbar() {
                 fontFamily: 'inherit',
               }}
             >
-              Join Us
+              Sign Up
             </button>
           </div>
 
@@ -208,7 +208,7 @@ export default function Navbar() {
                 <button
                   onClick={() => {
                     setOpen(false);
-                    goToDashboard();
+                    goToLogin();
                   }}
                   style={{
                     color: '#94a3b8',
@@ -219,12 +219,12 @@ export default function Navbar() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  Learn More
+                  Login
                 </button>
                 <button
                   onClick={() => {
                     setOpen(false);
-                    goToDashboard();
+                    goToLogin();
                   }}
                   style={{
                     background: 'linear-gradient(135deg,#ec4899,#7c3aed)',
@@ -238,7 +238,7 @@ export default function Navbar() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  Join Us
+                  Sign Up
                 </button>
               </div>
             </motion.div>

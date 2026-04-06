@@ -88,8 +88,8 @@ const FEATURES = [
 export default function HeroSection() {
   const router = useRouter();
 
-  const goToDashboard = () => {
-    router.push('/dashboard');
+  const goToLogin = () => {
+    router.push('/login');
   };
 
   return (
@@ -285,10 +285,10 @@ export default function HeroSection() {
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Button variant="glow" size="lg" onClick={goToDashboard}>
+              <Button variant="glow" size="lg" onClick={goToLogin}>
                 Join Now
               </Button>
-              <Button variant="outline" size="lg" onClick={goToDashboard}>
+              <Button variant="outline" size="lg" onClick={goToLogin}>
                 Learn More
               </Button>
             </div>
