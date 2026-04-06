@@ -207,7 +207,7 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
             flexShrink:    0,
           }}
         >
-          T
+          D
         </div>
         {!isMobile && (
           <div>
@@ -219,10 +219,10 @@ export default function DashboardHeader({ dark, isMobile, onToggleDark, onToggle
                 lineHeight: 1.2,
               }}
             >
-              Totok Michael
+              Divij Malhotra
             </div>
             <div style={{ color: sub, fontSize: 11 }}>
-              tmichael20@mail.com
+              divijmalhotra0112@gmail.com
             </div>
           </div>
         )}
