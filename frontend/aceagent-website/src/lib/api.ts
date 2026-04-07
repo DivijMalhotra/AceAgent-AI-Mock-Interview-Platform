@@ -51,9 +51,16 @@ export async function getInterviewSummary(sessionId: string) {
   return handleResponse(response, "Failed to fetch summary");
 }
 
-export async function endInterview(sessionId: string) {
+export async function endInterview(sessionId: string, integrityData?: {
+  cheating_detected?: boolean;
+  integrity_score?: number;
+  violation_count?: number;
+  alert_history?: any[];
+}) {
   const response = await fetch(`${API_URL}/interview/${sessionId}/end`, {
     method: "POST",
+    headers: integrityData ? { "Content-Type": "application/json" } : {},
+    body: integrityData ? JSON.stringify(integrityData) : undefined,
   });
   return handleResponse(response, "Failed to end interview");
 }

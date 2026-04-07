@@ -16,6 +16,11 @@ export interface AnalysisData {
   question_wise_analysis: QuestionWiseAnalysis[];
   transcripts: TranscriptEntry[];
   created_at: string;
+  // Integrity fields
+  integrity_score?: number;
+  cheating_detected?: boolean;
+  violation_count?: number;
+  integrity_status?: string;
 }
 
 export interface EmotionAnalysis {

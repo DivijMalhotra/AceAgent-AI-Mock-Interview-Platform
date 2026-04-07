@@ -1,6 +1,7 @@
 """
 ACIE Backend — Video Processing & Facial Tracking.
-Integrates OpenCV and MediaPipe for eye-contact and head-pose tracking.
+Integrates OpenCV and MediaPipe for eye-contact, head-pose tracking,
+iris-based gaze analysis, blink detection, and multi-face monitoring.
 """
 from __future__ import annotations
 
@@ -9,29 +10,46 @@ import mediapipe as mp
 import numpy as np
 
 from app.core.logging import logger
+from app.services.video.face_analyzer import FaceAnalyzer
+
 
 class VideoProcessor:
     def __init__(self):
         self.mp_face_mesh = mp.solutions.face_mesh
         # Initialize the FaceMesh model once per instance for performance
+        # max_num_faces=5 enables multi-face detection for cheating prevention
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
-            max_num_faces=1,
+            max_num_faces=5,
             refine_landmarks=True,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
+        # Per-session face analyzer is created externally and passed via
+        # process_frame; this is a shared fallback for backward compat
+        self._default_analyzer = FaceAnalyzer()
 
-    def process_frame(self, frame_bytes: bytes) -> dict:
+    def process_frame(
+        self,
+        frame_bytes: bytes,
+        face_analyzer: FaceAnalyzer | None = None,
+    ) -> dict:
         """
         Takes raw image bytes (e.g. JPEG from the webcam stream),
         processes the face mesh, and extracts behavioral metrics.
+
+        Args:
+            frame_bytes: Raw JPEG bytes from WebSocket.
+            face_analyzer: Optional per-session FaceAnalyzer instance.
+                           Falls back to a shared default if not provided.
         """
+        analyzer = face_analyzer or self._default_analyzer
+
         try:
             # Convert bytes to numpy array then to OpenCV format
             nparr = np.frombuffer(frame_bytes, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
+
             if frame is None:
                 return self._default_metrics()
 
@@ -42,15 +60,22 @@ class VideoProcessor:
             if not results.multi_face_landmarks:
                 return {
                     **self._default_metrics(),
-                    "face_detected": False
+                    "face_detected": False,
+                    "face_count": 0,
                 }
 
-            face_landmarks = results.multi_face_landmarks[0]
-            
-            # Compute eye contact and head movement heuristically
+            face_count = len(results.multi_face_landmarks)
+            face_landmarks = results.multi_face_landmarks[0]  # primary face
+
+            # Compute head-pose eye contact and original metrics
             metrics = self._calculate_metrics(face_landmarks, frame.shape)
             metrics["face_detected"] = True
-            
+            metrics["face_count"] = face_count
+
+            # Compute advanced face analysis (gaze, blinks, multi-face)
+            analysis = analyzer.analyze(face_landmarks, frame.shape, face_count)
+            metrics.update(analysis)
+
             return metrics
 
         except Exception as e:
@@ -68,9 +93,9 @@ class VideoProcessor:
         # 33: left eye corner, 263: right eye corner, 1: nose tip, 152: chin, 61: left mouth, 291: right mouth
         face_3d = []
         face_2d = []
-        
+
         target_indices = [33, 263, 1, 152, 61, 291]
-        
+
         for idx, lm in enumerate(landmarks.landmark):
             if idx in target_indices:
                 x, y = int(lm.x * w), int(lm.y * h)
@@ -91,13 +116,13 @@ class VideoProcessor:
 
         # Solve PnP (Perspective-n-Point) to get rotation vector
         success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
-        
+
         if not success:
             return self._default_metrics()
 
         # Convert rotation vector to a rotation matrix
         rmat, _ = cv2.Rodrigues(rot_vec)
-        
+
         # Get angles (yaw, pitch, roll)
         angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
         pitch = angles[0] * 360
@@ -129,16 +154,23 @@ class VideoProcessor:
     def _default_metrics(self) -> dict:
         return {
             "face_detected": False,
+            "face_count": 0,
             "pitch_deg": 0.0,
             "yaw_deg": 0.0,
             "roll_deg": 0.0,
             "looking_at_camera": False,
+            "gaze_direction": "center",
+            "gaze_deviation": 0.0,
+            "eye_aspect_ratio": 0.28,
+            "is_blinking": False,
+            "blink_rate": 0.0,
+            "multi_face_violation": False,
             "derived_scores": {
                 "eye_contact": 0.0,
                 "facial_expression": 0.0
             }
         }
-    
+
     def close(self):
         """Clean up Mediapipe resources."""
         self.face_mesh.close()

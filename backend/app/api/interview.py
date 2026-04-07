@@ -13,7 +13,8 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Body
+from typing import Optional
 
 from app.core.logging import logger
 from app.models.schemas import (
@@ -173,15 +174,31 @@ async def get_summary(session_id: str) -> APIResponse:
 
 
 @router.post("/{session_id}/end", response_model=APIResponse)
-async def end_interview(session_id: str) -> APIResponse:
-    """End an active session."""
+async def end_interview(
+    session_id: str,
+    body: Optional[dict] = Body(default=None),
+) -> APIResponse:
+    """End an active session. Optionally receives integrity/cheating data."""
     session = await redis_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     session.status = InterviewStatus.COMPLETED
+
+    # Store integrity metadata if provided
+    if body:
+        # Use a generic metadata dict on the session
+        if not hasattr(session, 'metadata') or session.metadata is None:
+            session.metadata = {}
+        session.metadata["cheating_detected"] = body.get("cheating_detected", False)
+        session.metadata["integrity_score"] = body.get("integrity_score", 1.0)
+        session.metadata["violation_count"] = body.get("violation_count", 0)
+        session.metadata["alert_history"] = body.get("alert_history", [])
+
     await redis_store.save_session(session)
-    logger.info("Session %s ended | questions=%d", session_id, len(session.questions_asked))
+    logger.info("Session %s ended | questions=%d | cheating=%s",
+                session_id, len(session.questions_asked),
+                body.get("cheating_detected", False) if body else False)
 
     return APIResponse(data={"session_id": session_id, "status": "completed"})
 

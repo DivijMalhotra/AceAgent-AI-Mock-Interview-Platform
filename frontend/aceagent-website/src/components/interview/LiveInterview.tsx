@@ -21,6 +21,12 @@ import {
   Upload,
   CheckCircle2,
   AlertTriangle,
+  Eye,
+  Users,
+  Activity,
+  ShieldAlert,
+  ShieldCheck,
+  ScanFace,
 } from "lucide-react";
 
 // ── Helper: format seconds → MM:SS ──
@@ -30,6 +36,77 @@ function formatTime(seconds: number): string {
     .padStart(2, "0");
   const s = (seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
+}
+
+// ── Helper: integrity score → color ──
+function getIntegrityColor(score: number): string {
+  if (score >= 0.8) return "from-emerald-400 via-emerald-500 to-cyan-400";
+  if (score >= 0.6) return "from-amber-400 via-yellow-500 to-orange-400";
+  return "from-red-500 via-red-600 to-rose-500";
+}
+
+function getIntegrityGlow(score: number): string {
+  if (score >= 0.8) return "rgba(16,185,129,0.5)";
+  if (score >= 0.6) return "rgba(245,158,11,0.5)";
+  return "rgba(239,68,68,0.5)";
+}
+
+function getIntegrityTextColor(score: number): string {
+  if (score >= 0.8) return "text-emerald-400";
+  if (score >= 0.6) return "text-amber-400";
+  return "text-red-400";
+}
+
+function getIntegrityLabel(score: number): string {
+  if (score >= 0.9) return "Excellent";
+  if (score >= 0.8) return "Good";
+  if (score >= 0.6) return "Fair";
+  if (score >= 0.4) return "Poor";
+  return "Critical";
+}
+
+// ── Alert badge config ──
+const ALERT_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string; bgColor: string; borderColor: string }> = {
+  MULTI_FACE: {
+    icon: <Users size={12} />,
+    label: "Multiple Faces",
+    color: "text-red-400",
+    bgColor: "bg-red-500/15",
+    borderColor: "border-red-500/30",
+  },
+  LOOKING_AWAY: {
+    icon: <Eye size={12} />,
+    label: "Looking Away",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/15",
+    borderColor: "border-amber-500/30",
+  },
+  EXCESSIVE_BLINKING: {
+    icon: <Activity size={12} />,
+    label: "Blink Anomaly",
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/15",
+    borderColor: "border-yellow-500/30",
+  },
+  NO_FACE: {
+    icon: <ScanFace size={12} />,
+    label: "No Face Detected",
+    color: "text-gray-400",
+    bgColor: "bg-gray-500/15",
+    borderColor: "border-gray-500/30",
+  },
+};
+
+// ── Gaze direction → display ──
+function getGazeDisplay(direction: string): { label: string; color: string } {
+  switch (direction) {
+    case "center": return { label: "Centered", color: "text-cyan-400" };
+    case "left":   return { label: "Left", color: "text-amber-400" };
+    case "right":  return { label: "Right", color: "text-amber-400" };
+    case "up":     return { label: "Up", color: "text-amber-400" };
+    case "down":   return { label: "Down", color: "text-amber-400" };
+    default:       return { label: "Unknown", color: "text-gray-400" };
+  }
 }
 
 export default function LiveInterview({ sessionId }: { sessionId: string }) {
@@ -42,7 +119,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
     videoRef,
     startMedia,
     submitAnswer,
-    // 🔥 NEW: Recording
+    // Recording
     isRecording,
     recordingTime,
     videoBlob,
@@ -50,8 +127,13 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
     startRecording,
     stopRecording,
     resetRecording,
-    // 🔥 NEW: End interview
+    // End interview
     handleEndInterview,
+    // 🔥 NEW: Integrity monitoring
+    alertHistory,
+    multiViolationCount,
+    isCalibrating,
+    cheatingDetected,
   } = useInterview(sessionId);
 
   const [userAnswer, setUserAnswer] = useState("");
@@ -59,6 +141,9 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
+
+  // 🔥 Active alerts (deduplicated from current frame)
+  const currentAlerts: string[] = metrics?.integrity?.alerts ?? [];
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -152,26 +237,42 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
         <div className="relative mb-8">
           {status === "redirecting" ? (
-            <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+            cheatingDetected ? (
+              <ShieldAlert className="w-16 h-16 text-red-500" />
+            ) : (
+              <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+            )
           ) : (
             <Loader2 className="w-16 h-16 text-violet-500 animate-spin" />
           )}
           <div
             className={`absolute inset-0 ${
               status === "redirecting"
-                ? "bg-emerald-500/20"
+                ? cheatingDetected
+                  ? "bg-red-500/20"
+                  : "bg-emerald-500/20"
                 : "bg-violet-500/20"
             } blur-xl rounded-full`}
           />
         </div>
         <p className="text-xl font-bold tracking-tight mb-2">
-          {status === "ending" && "Ending Interview..."}
+          {status === "ending" && (cheatingDetected ? "Terminating Session..." : "Ending Interview...")}
           {status === "uploading" && "Uploading Recording..."}
-          {status === "redirecting" && "Analysis Ready!"}
+          {status === "redirecting" && (cheatingDetected ? "Cheating Flagged" : "Analysis Ready!")}
         </p>
         <p className="text-gray-500 text-sm">
           {uploadProgress || systemMessage}
         </p>
+
+        {/* Cheating alert details */}
+        {cheatingDetected && status === "redirecting" && (
+          <div className="mt-6 px-6 py-4 bg-red-500/10 border border-red-500/20 rounded-xl max-w-md">
+            <p className="text-sm text-red-300 text-center">
+              Multiple face violations detected ({multiViolationCount} occurrences).
+              This session has been flagged for review.
+            </p>
+          </div>
+        )}
 
         {/* Upload progress bar */}
         {status === "uploading" && (
@@ -197,6 +298,12 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
   }
 
   const eyeContact = metrics?.derived_scores?.eye_contact ?? 0;
+  const integrityScore = metrics?.integrity?.score ?? eyeContact;
+  const gazeDirection = metrics?.gaze_direction ?? "center";
+  const blinkRate = metrics?.blink_rate ?? 0;
+  const faceCount = metrics?.face_count ?? 0;
+  const integrityCalibrated = metrics?.integrity?.calibrated ?? false;
+  const gazeDisplay = getGazeDisplay(gazeDirection);
 
   return (
     <>
@@ -227,7 +334,89 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
               />
             </div>
 
-            {/* 🔥 TOP LEFT: Recording indicator with timer */}
+            {/* 🔥 CALIBRATION OVERLAY */}
+            <AnimatePresence>
+              {isCalibrating && status === "active" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="absolute inset-0 bottom-16 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md pointer-events-none"
+                >
+                  <div className="relative mb-6">
+                    <motion.div
+                      className="w-20 h-20 rounded-full border-4 border-violet-500/30"
+                      style={{ borderTopColor: "rgb(139, 92, 246)" }}
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    />
+                    <ScanFace
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-violet-400"
+                      size={30}
+                    />
+                  </div>
+                  <span className="text-sm font-black uppercase tracking-[0.3em] text-violet-400 mb-3">
+                    Calibrating
+                  </span>
+                  <p className="text-xs text-gray-400 text-center max-w-[220px] leading-relaxed">
+                    Look directly at the camera and blink naturally
+                  </p>
+                  <div className="flex gap-1.5 mt-4">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1.5 h-1.5 rounded-full bg-violet-500"
+                        animate={{ opacity: [0.3, 1, 0.3] }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay: i * 0.15,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 🔥 MULTI-FACE WARNING BADGE ON VIDEO */}
+            <AnimatePresence>
+              {currentAlerts.includes("MULTI_FACE") && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                  className="absolute top-16 left-1/2 -translate-x-1/2 z-20 px-5 py-3 bg-red-500/20 backdrop-blur-xl border border-red-500/40 rounded-xl shadow-[0_0_30px_rgba(239,68,68,0.3)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Infinity,
+                      }}
+                    >
+                      <Users size={16} className="text-red-400" />
+                    </motion.div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400 block">
+                        Multiple Faces — Warning {multiViolationCount}/3
+                      </span>
+                      <span className="text-[9px] text-red-300/60">
+                        Ensure only your face is visible
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* TOP LEFT: Recording indicator with timer */}
             <div className="absolute top-5 left-5 flex items-center gap-4">
               <div className="flex items-center gap-3 bg-black/60 backdrop-blur-2xl px-4 py-2 rounded-xl border border-white/10">
                 {isRecording ? (
@@ -262,7 +451,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
               </span>
             </div>
 
-            {/* 🔥 BOTTOM CONTROLS — Now includes recording + end session */}
+            {/* BOTTOM CONTROLS — recording + end session */}
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-3">
               {/* Camera */}
               <button
@@ -294,7 +483,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
                 />
               </button>
 
-              {/* 🔥 Record / Stop Record */}
+              {/* Record / Stop Record */}
               {!isRecording && !videoBlob && (
                 <button
                   onClick={startRecording}
@@ -323,7 +512,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
                 </button>
               )}
 
-              {/* 🔥 Re-record (only if blob exists) */}
+              {/* Re-record (only if blob exists) */}
               {videoBlob && !isRecording && (
                 <button
                   onClick={resetRecording}
@@ -337,7 +526,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
                 </button>
               )}
 
-              {/* 🔥 End Session */}
+              {/* End Session */}
               <button
                 onClick={() => setShowEndConfirm(true)}
                 className="px-6 py-3 bg-red-500/80 hover:bg-red-500 backdrop-blur-2xl border border-red-400/30 rounded-xl transition-all text-white text-xs font-bold tracking-wide"
@@ -350,7 +539,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
             </div>
           </div>
 
-          {/* SUSPICIOUS TRACK STATS */}
+          {/* SUSPICIOUS TRACK STATS — 🔥 ENHANCED */}
           <div className="bg-[#0c1032] p-5 rounded-2xl border border-[rgba(124,58,237,0.12)] flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -358,52 +547,174 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
                   <Target size={14} className="text-violet-400" />
                 </div>
                 <span className="text-[10px] uppercase text-gray-400 font-black tracking-[0.2em]">
-                  Suspicious Track
+                  Integrity Monitor
                 </span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">
-                  Calibration_Stable
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${
+                  integrityCalibrated
+                    ? "bg-emerald-500/10 border-emerald-500/20"
+                    : "bg-amber-500/10 border-amber-500/20"
+                }`}
+              >
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    integrityCalibrated ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+                  }`}
+                />
+                <span
+                  className={`text-[9px] font-black uppercase tracking-wider ${
+                    integrityCalibrated ? "text-emerald-400" : "text-amber-400"
+                  }`}
+                >
+                  {integrityCalibrated ? "Calibrated" : "Calibrating..."}
                 </span>
               </div>
             </div>
 
+            {/* 🔥 INTEGRITY SCORE BAR — Dynamic color */}
             <div className="flex items-center gap-4">
-              <span className="text-[9px] font-mono text-gray-500 uppercase tracking-tighter">
+              <span className="text-[9px] font-mono text-gray-500 uppercase tracking-tighter whitespace-nowrap">
                 Integrity Score
               </span>
               <div className="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-400 via-violet-500 to-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                  className={`h-full bg-gradient-to-r ${getIntegrityColor(integrityScore)} rounded-full`}
                   initial={{ width: 0 }}
-                  animate={{ width: `${eyeContact * 100}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
+                  animate={{ width: `${integrityScore * 100}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  style={{
+                    boxShadow: `0 0 10px ${getIntegrityGlow(integrityScore)}`,
+                  }}
                 />
               </div>
-              <span className="text-xs font-black font-mono text-violet-400 tracking-tighter">
-                {Math.round(eyeContact * 100)}%
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-xs font-black font-mono tracking-tighter ${getIntegrityTextColor(integrityScore)}`}
+                >
+                  {Math.round(integrityScore * 100)}%
+                </span>
+                <span
+                  className={`text-[8px] font-bold uppercase tracking-wide ${getIntegrityTextColor(integrityScore)}`}
+                >
+                  {getIntegrityLabel(integrityScore)}
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* 🔥 DETAILED METRICS GRID */}
+            <div className="grid grid-cols-4 gap-2">
+              {/* Gaze Direction */}
               <div className="bg-[#050816] p-3 rounded-xl border border-[rgba(124,58,237,0.08)]">
                 <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">
-                  Eyes
+                  Gaze
                 </span>
-                <span className="text-xs font-black text-cyan-400 uppercase">
-                  Locked
+                <span className={`text-xs font-black uppercase ${gazeDisplay.color}`}>
+                  {gazeDisplay.label}
                 </span>
               </div>
+
+              {/* Blink Rate */}
               <div className="bg-[#050816] p-3 rounded-xl border border-[rgba(124,58,237,0.08)]">
                 <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">
-                  Audio
+                  Blinks
                 </span>
-                <span className="text-xs font-black text-violet-400 uppercase">
-                  Isolated
+                <span
+                  className={`text-xs font-black ${
+                    blinkRate > 40 || blinkRate < 5
+                      ? "text-amber-400"
+                      : "text-violet-400"
+                  }`}
+                >
+                  {Math.round(blinkRate)}{" "}
+                  <span className="text-[8px] font-bold text-gray-500">bpm</span>
+                </span>
+              </div>
+
+              {/* Face Count */}
+              <div className="bg-[#050816] p-3 rounded-xl border border-[rgba(124,58,237,0.08)]">
+                <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">
+                  Faces
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`text-xs font-black ${
+                      faceCount > 1
+                        ? "text-red-400"
+                        : faceCount === 1
+                        ? "text-cyan-400"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {faceCount}
+                  </span>
+                  {faceCount > 1 && (
+                    <motion.div
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                    >
+                      <AlertTriangle size={10} className="text-red-400" />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              {/* Violations */}
+              <div className="bg-[#050816] p-3 rounded-xl border border-[rgba(124,58,237,0.08)]">
+                <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">
+                  Alerts
+                </span>
+                <span
+                  className={`text-xs font-black ${
+                    multiViolationCount > 0 ? "text-red-400" : "text-emerald-400"
+                  }`}
+                >
+                  {multiViolationCount}/3
                 </span>
               </div>
             </div>
+
+            {/* 🔥 ACTIVE ALERT BADGES */}
+            <AnimatePresence>
+              {currentAlerts.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap gap-2 overflow-hidden"
+                >
+                  {currentAlerts.map((alert) => {
+                    const config = ALERT_CONFIG[alert];
+                    if (!config) return null;
+                    return (
+                      <motion.div
+                        key={alert}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${config.bgColor} ${config.borderColor}`}
+                      >
+                        <motion.div
+                          animate={{ scale: [1, 1.15, 1] }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                          }}
+                          className={config.color}
+                        >
+                          {config.icon}
+                        </motion.div>
+                        <span
+                          className={`text-[9px] font-black uppercase tracking-wider ${config.color}`}
+                        >
+                          {config.label}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* COGNITIVE VECTOR OUTPUT */}
@@ -551,7 +862,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
               </AnimatePresence>
             </div>
 
-            {/* 🔥 Action buttons row */}
+            {/* Action buttons row */}
             <div className="flex gap-3">
               {/* Submit Answer */}
               <button
@@ -582,7 +893,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
                 </div>
               </button>
 
-              {/* 🔥 Submit & End (shortcut) */}
+              {/* Submit & End (shortcut) */}
               <button
                 onClick={async () => {
                   if (userAnswer.trim()) {
@@ -614,7 +925,7 @@ export default function LiveInterview({ sessionId }: { sessionId: string }) {
         </div>
       </div>
 
-      {/* 🔥 END SESSION CONFIRMATION MODAL */}
+      {/* END SESSION CONFIRMATION MODAL */}
       <AnimatePresence>
         {showEndConfirm && (
           <motion.div

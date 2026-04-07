@@ -147,7 +147,7 @@ def _build_analysis(session: SessionState) -> dict:
             "timestamp": ans.get("timestamp", ""),
         })
 
-    return {
+    result = {
         "session_id": session.session_id,
         "topic": session.config.topic,
         "difficulty": session.config.difficulty.value,
@@ -164,7 +164,44 @@ def _build_analysis(session: SessionState) -> dict:
         "question_wise_analysis": question_wise,
         "transcripts": transcripts,
         "created_at": session.created_at,
+        # Integrity fields (defaults for non-cheating sessions)
+        "integrity_score": 100,
+        "cheating_detected": False,
+        "violation_count": 0,
+        "integrity_status": "Clean",
     }
+
+    # ── Override for cheating sessions ──
+    meta = getattr(session, "metadata", {}) or {}
+    if meta.get("cheating_detected"):
+        result["cheating_detected"] = True
+        result["integrity_score"] = 0
+        result["overall_score"] = 0
+        result["confidence_score"] = 0
+        result["communication_score"] = 0
+        result["violation_count"] = meta.get("violation_count", 0)
+        result["integrity_status"] = "Cheating Detected"
+        result["emotion_analysis"] = {
+            "confidence": 0.0,
+            "nervousness": 1.0,
+            "engagement": 0.0,
+        }
+        result["gesture_analysis"] = {
+            "eye_contact": 0.0,
+            "posture": 0.0,
+        }
+        result["feedback"] = [
+            "⚠️ This session was flagged for academic integrity violations.",
+            f"Multiple faces were detected {meta.get('violation_count', 0)} times during the interview.",
+            "The integrity monitoring system terminated this session automatically.",
+            "All scores have been set to zero due to the violation.",
+            "Please retake the interview ensuring only you are visible on camera.",
+        ]
+        # Zero out question-wise scores
+        for q in result["question_wise_analysis"]:
+            q["score"] = 0
+
+    return result
 
 
 @router.get("/{session_id}/analysis", response_model=APIResponse)

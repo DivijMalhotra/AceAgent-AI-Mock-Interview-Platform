@@ -59,6 +59,7 @@ class SessionState(BaseModel):
     answers: List[Dict[str, Any]] = Field(default_factory=list)
     confidence_scores: List[Dict[str, Any]] = Field(default_factory=list)
     evaluations: List[Any] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 

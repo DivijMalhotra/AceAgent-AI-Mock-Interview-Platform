@@ -11,6 +11,11 @@ export type InterviewPhase =
   | "redirecting"
   | "error";
 
+export interface IntegrityAlert {
+  alert: string;
+  timestamp: number;
+}
+
 export function useInterview(sessionId: string) {
   // ── Core state (unchanged) ──
   const [status, setStatus] = useState<InterviewPhase>("idle");
@@ -19,11 +24,17 @@ export function useInterview(sessionId: string) {
   const [systemMessage, setSystemMessage] = useState<string>("");
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // ── Recording state (NEW) ──
+  // ── Recording state ──
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string>("");
+
+  // ── 🔥 Integrity monitoring state (NEW) ──
+  const [alertHistory, setAlertHistory] = useState<IntegrityAlert[]>([]);
+  const [multiViolationCount, setMultiViolationCount] = useState(0);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [cheatingDetected, setCheatingDetected] = useState(false);
 
   // ── Refs ──
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,6 +44,7 @@ export function useInterview(sessionId: string) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const calibrationTriggered = useRef(false);
 
   // ── Load initial session state (unchanged) ──
   useEffect(() => {
@@ -65,7 +77,7 @@ export function useInterview(sessionId: string) {
     if (sessionId) loadSession();
   }, [sessionId]);
 
-  // ── WebSocket connection (unchanged) ──
+  // ── WebSocket connection ──
   useEffect(() => {
     if (!sessionId) return;
 
@@ -80,10 +92,53 @@ export function useInterview(sessionId: string) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+
         if (data.type === "live_metrics") {
           setMetrics(data.data);
+
+          // 🔥 Track integrity state from metrics
+          const integrity = data.data?.integrity;
+          if (integrity) {
+            // Update calibration status
+            if (integrity.calibrated) {
+              setIsCalibrating(false);
+            }
+
+            // Track violation count
+            if (integrity.violation_count !== undefined) {
+              setMultiViolationCount(integrity.violation_count);
+            }
+
+            // Append new alerts to history
+            if (integrity.alerts && integrity.alerts.length > 0) {
+              const now = Date.now();
+              const newAlerts: IntegrityAlert[] = integrity.alerts.map(
+                (a: string) => ({ alert: a, timestamp: now })
+              );
+              setAlertHistory((prev) => [...prev, ...newAlerts].slice(-200));
+            }
+          }
         } else if (data.type === "system_event") {
           setSystemMessage(data.data);
+        } else if (data.type === "force_end") {
+          // 🔥 Forced termination due to cheating
+          setCheatingDetected(true);
+          setSystemMessage(
+            data.data?.message || "Cheating detected. Interview terminated."
+          );
+          // Save alert history from server
+          if (data.data?.alert_history) {
+            setAlertHistory(data.data.alert_history);
+          }
+          // Brief delay so user sees the message, then auto-end
+          setTimeout(() => {
+            handleEndInterview();
+          }, 2000);
+        } else if (data.type === "alert_history") {
+          // Response to get_alert_history command
+          if (data.data) {
+            setAlertHistory(data.data);
+          }
         }
       } catch (e) {
         console.error("Failed to parse WS message", e);
@@ -109,7 +164,7 @@ export function useInterview(sessionId: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // ── Media (unchanged) ──
+  // ── Media ──
   const startMedia = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -120,6 +175,12 @@ export function useInterview(sessionId: string) {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+      }
+
+      // 🔥 Trigger calibration on first camera start only
+      if (!calibrationTriggered.current) {
+        calibrationTriggered.current = true;
+        setIsCalibrating(true);
       }
 
       const canvas = document.createElement("canvas");
@@ -160,7 +221,7 @@ export function useInterview(sessionId: string) {
     if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
   };
 
-  // ── 🔥 RECORDING (NEW) ──
+  // ── RECORDING ──
 
   const startRecording = useCallback(() => {
     if (!streamRef.current) {
@@ -269,11 +330,15 @@ export function useInterview(sessionId: string) {
     }
   };
 
-  // ── 🔥 END INTERVIEW (NEW) ──
+  // ── END INTERVIEW ──
 
   const handleEndInterview = useCallback(async () => {
     setStatus("ending");
-    setSystemMessage("Ending interview session...");
+    setSystemMessage(
+      cheatingDetected
+        ? "Cheating detected. Submitting interview..."
+        : "Ending interview session..."
+    );
 
     try {
       // 1. Stop recording if active
@@ -318,14 +383,23 @@ export function useInterview(sessionId: string) {
         }
       }
 
-      // 3. End session via API
+      // 3. End session via API — include integrity data
       const { endInterview } = await import("@/lib/api");
-      await endInterview(sessionId);
+      await endInterview(sessionId, {
+        cheating_detected: cheatingDetected,
+        integrity_score: cheatingDetected ? 0 : (metrics?.integrity?.score ?? 1.0),
+        violation_count: multiViolationCount,
+        alert_history: alertHistory,
+      });
 
       // 4. Stop media and redirect
       stopMedia();
       setStatus("redirecting");
-      setSystemMessage("Redirecting to your analysis...");
+      setSystemMessage(
+        cheatingDetected
+          ? "Cheating flagged. Redirecting to results..."
+          : "Redirecting to your analysis..."
+      );
 
       // Brief delay so user sees the status
       await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -338,7 +412,7 @@ export function useInterview(sessionId: string) {
         window.location.href = `/dashboard/analysis/${sessionId}`;
       }, 1500);
     }
-  }, [sessionId, videoBlob, stopMedia]);
+  }, [sessionId, videoBlob, stopMedia, cheatingDetected]);
 
   // ── Cleanup timer on unmount ──
   useEffect(() => {
@@ -358,7 +432,7 @@ export function useInterview(sessionId: string) {
     startMedia,
     stopMedia,
     submitAnswer,
-    // 🔥 NEW: Recording
+    // Recording
     isRecording,
     recordingTime,
     videoBlob,
@@ -366,7 +440,12 @@ export function useInterview(sessionId: string) {
     startRecording,
     stopRecording,
     resetRecording,
-    // 🔥 NEW: End interview
+    // End interview
     handleEndInterview,
+    // 🔥 NEW: Integrity monitoring
+    alertHistory,
+    multiViolationCount,
+    isCalibrating,
+    cheatingDetected,
   };
 }

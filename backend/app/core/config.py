@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     # ── Session ──
     session_ttl_seconds: int = 3600
 
+    # ── Integrity Monitoring ──
+    integrity_gaze_deviation_threshold: float = 0.6
+    integrity_blink_rate_high: float = 40.0
+    integrity_blink_rate_low: float = 5.0
+    integrity_looking_away_seconds: float = 2.0
+    integrity_max_multi_face_violations: int = 3
+    integrity_calibration_frames: int = 20   # ~5 seconds at 4 FPS
+    integrity_smoothing_alpha: float = 0.3
+
     # ── Derived helpers ──
     @property
     def cors_origin_list(self) -> List[str]:

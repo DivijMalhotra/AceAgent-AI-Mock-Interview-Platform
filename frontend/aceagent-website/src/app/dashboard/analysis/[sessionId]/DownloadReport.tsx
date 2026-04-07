@@ -18,23 +18,28 @@ export default function DownloadReport({ reportRef, sessionId, dark }: Props) {
     setLoading(true);
 
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const { toPng } = await import('html-to-image');
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
+      // Use html-to-image instead of html2canvas to support modern CSS like lab()
+      const imgData = await toPng(reportRef.current, {
         backgroundColor: dark ? '#050816' : '#f0f4f0',
-        useCORS: true,
-        logging: false,
+        pixelRatio: 2,
+        // Bypass embedWebFonts script which crashes on third-party CORS stylesheets (e.g., Clerk)
+        fontEmbedCSS: '',
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // We need to know the dimensions since we no longer have a canvas element. 
+      // We can get them from the div itself.
+      const rect = reportRef.current.getBoundingClientRect();
+      // Multiply by pixelRatio to get the actual image resolution
+      const imgWidth = rect.width * 2;
+      const imgHeight = rect.height * 2;
+
       const pdf = new jsPDF('p', 'mm', 'a4');
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       const scaledWidth = imgWidth * ratio;
       const scaledHeight = imgHeight * ratio;
