@@ -269,7 +269,12 @@ export default function AnalysisPage() {
             marginBottom: 20,
           }}
         >
-          <OverallScoreCard score={data.overall_score} label="Overall Score" dark={dark} />
+          <OverallScoreCard
+            score={data.overall_score}
+            label="Overall Score"
+            cheatingDetected={data.cheating_detected}
+            dark={dark}
+          />
           <SectionBreakdown
             confidence={data.confidence_score}
             communication={data.communication_score}
@@ -299,7 +304,12 @@ export default function AnalysisPage() {
           }}
         >
           <ResponseAnalysis transcripts={data.transcripts} dark={dark} />
-          <AnalysisFeedbackPanel feedback={data.feedback} dark={dark} />
+          <AnalysisFeedbackPanel
+            feedback={data.feedback}
+            cheatingDetected={data.cheating_detected}
+            violationCount={data.violation_count}
+            dark={dark}
+          />
         </div>
 
         {/* Row 4: Question Breakdown (full width) */}

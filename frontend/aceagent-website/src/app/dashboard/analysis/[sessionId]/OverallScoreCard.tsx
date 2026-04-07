@@ -5,10 +5,11 @@ import { motion } from 'framer-motion';
 interface Props {
   score: number;
   label: string;
+  cheatingDetected?: boolean;
   dark: boolean;
 }
 
-export default function OverallScoreCard({ score, label, dark }: Props) {
+export default function OverallScoreCard({ score, label, cheatingDetected, dark }: Props) {
   const radius = 70;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -141,7 +142,7 @@ export default function OverallScoreCard({ score, label, dark }: Props) {
             letterSpacing: 1,
           }}
         >
-          {score >= 75 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work'}
+          {cheatingDetected ? 'Violation' : score >= 75 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work'}
         </div>
       </div>
     </motion.div>

@@ -132,7 +132,12 @@ export function useInterview(sessionId: string) {
           }
           // Brief delay so user sees the message, then auto-end
           setTimeout(() => {
-            handleEndInterview();
+            handleEndInterview({
+              cheating_detected: true,
+              violation_count: data.data?.violation_count || 0,
+              alert_history: data.data?.alert_history || [],
+              integrity_score: 0
+            });
           }, 2000);
         } else if (data.type === "alert_history") {
           // Response to get_alert_history command
@@ -332,10 +337,22 @@ export function useInterview(sessionId: string) {
 
   // ── END INTERVIEW ──
 
-  const handleEndInterview = useCallback(async () => {
+  const handleEndInterview = useCallback(async (
+    overrides?: {
+      cheating_detected?: boolean;
+      violation_count?: number;
+      alert_history?: any[];
+      integrity_score?: number;
+    }
+  ) => {
+    const isCheating = overrides?.cheating_detected ?? cheatingDetected;
+    const count = overrides?.violation_count ?? multiViolationCount;
+    const history = overrides?.alert_history ?? alertHistory;
+    const finalScore = overrides?.integrity_score ?? (metrics?.integrity?.score ?? 1.0);
+
     setStatus("ending");
     setSystemMessage(
-      cheatingDetected
+      isCheating
         ? "Cheating detected. Submitting interview..."
         : "Ending interview session..."
     );
@@ -386,17 +403,17 @@ export function useInterview(sessionId: string) {
       // 3. End session via API — include integrity data
       const { endInterview } = await import("@/lib/api");
       await endInterview(sessionId, {
-        cheating_detected: cheatingDetected,
-        integrity_score: cheatingDetected ? 0 : (metrics?.integrity?.score ?? 1.0),
-        violation_count: multiViolationCount,
-        alert_history: alertHistory,
+        cheating_detected: isCheating,
+        integrity_score: isCheating ? 0 : finalScore,
+        violation_count: count,
+        alert_history: history,
       });
 
       // 4. Stop media and redirect
       stopMedia();
       setStatus("redirecting");
       setSystemMessage(
-        cheatingDetected
+        isCheating
           ? "Cheating flagged. Redirecting to results..."
           : "Redirecting to your analysis..."
       );
@@ -412,7 +429,7 @@ export function useInterview(sessionId: string) {
         window.location.href = `/dashboard/analysis/${sessionId}`;
       }, 1500);
     }
-  }, [sessionId, videoBlob, stopMedia, cheatingDetected]);
+  }, [sessionId, videoBlob, stopMedia, cheatingDetected, multiViolationCount, alertHistory, metrics]);
 
   // ── Cleanup timer on unmount ──
   useEffect(() => {

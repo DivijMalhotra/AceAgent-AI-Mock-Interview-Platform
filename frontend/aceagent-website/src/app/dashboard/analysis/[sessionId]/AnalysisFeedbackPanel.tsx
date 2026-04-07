@@ -12,6 +12,8 @@ import {
 
 interface Props {
   feedback: string[];
+  cheatingDetected?: boolean;
+  violationCount?: number;
   dark: boolean;
 }
 
@@ -39,7 +41,7 @@ function categorizeFeedback(items: string[]) {
   return categories;
 }
 
-export default function AnalysisFeedbackPanel({ feedback, dark }: Props) {
+export default function AnalysisFeedbackPanel({ feedback, cheatingDetected, violationCount, dark }: Props) {
   const bg = dark ? '#0c1032' : '#fff';
   const border = dark ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.07)';
   const text = dark ? '#f1f5f9' : '#0f172a';
@@ -67,6 +69,37 @@ export default function AnalysisFeedbackPanel({ feedback, dark }: Props) {
       <div style={{ fontSize: 12, color: sub, marginBottom: 24 }}>
         Actionable improvement suggestions
       </div>
+
+      {cheatingDetected && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 12,
+            padding: '20px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '16px',
+            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.15)'
+          }}
+        >
+          <AlertCircle size={28} style={{ color: '#ef4444', flexShrink: 0, marginTop: 4 }} />
+          <div>
+            <div style={{ color: '#ef4444', fontSize: 18, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+              Academic Integrity Violation
+            </div>
+            <div style={{ color: dark ? '#fca5a5' : '#b91c1c', fontSize: 13, lineHeight: 1.6, fontWeight: 600 }}>
+              This session was flagged and terminated by the Integrity Monitor. 
+              {violationCount ? ` Multiple faces were detected in the frame during ${violationCount} separate incidents.` : ' Unauthorised assistance was detected.'}
+              <br/><br/>
+              <b>All performance scores have been invalidated and set to zero.</b>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {Object.entries(categories).map(([catName, cat], ci) => {
